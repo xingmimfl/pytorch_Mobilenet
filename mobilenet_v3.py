@@ -9,14 +9,14 @@ class hswish(nn.Module):
         super(hswish, self).__init__()
 
     def forward(self, x):
-        return x * F.relu6(x+3) / 6.0
+        return x * F.relu6(x+3, inplace=True) / 6.0
 
 class hsigmoid(nn.Module):
     def __init__(self):
         super(hsigmoid, self).__init__()
         
     def forward(self, x):
-        return x * torch.sigmoid(x)
+        return F.relu6(x+3, inplace=True) / 6.0
 
 class SE(nn.Module):
     def __init__(self, in_c):
@@ -49,18 +49,20 @@ class conv2d(nn.Module):
         super(conv2d, self).__init__()
         padding_size = int((kernel_s - 1) / 2)
 
-        if NL=="HS":
-            nonlinear_layer = hswish()
-        elif NL == "RE":
-            nonlinear_layer = nn.ReLU(inplace=False)
-        
+        #----conv2d
         layers = []
         layers += [nn.Conv2d(in_channels=in_c, out_channels=out_c, kernel_size=kernel_s, stride=stride, padding=padding_size, bias=False)]
 
+        #-----bn
         if bn:
             layers += [nn.BatchNorm2d(out_c)]
 
+        #-----non linear layer
         if NL=="HS":
+            nonlinear_layer = hswish()
+            layers += [nonlinear_layer]
+        elif NL == "RE":
+            nonlinear_layer = nn.ReLU(inplace=True)
             layers += [nonlinear_layer]
 
         self.layers = nn.Sequential(*layers)        
@@ -89,18 +91,18 @@ class Bneck(nn.Module):
         self.layers = nn.Sequential(
             nn.Conv2d(in_c, exp_size, kernel_size=1, stride=1, padding=0, bias=False),
             nn.BatchNorm2d(exp_size),
+            nonlinear_layer, 
 
             #----depthwise
             nn.Conv2d(exp_size, exp_size, kernel_size=kernel_s, stride=stride, padding=padding_size, groups=exp_size, bias=False),
             nn.BatchNorm2d(exp_size),
-            nonlinear_layer,
             #---SE module
             se_identity_layer, 
+            nonlinear_layer,
 
             #---pointwise
             nn.Conv2d(exp_size, out_c, kernel_size=1, stride=1, bias=False),
             nn.BatchNorm2d(out_c),
-            nonlinear_layer, 
         )
 
     def forward(self, x):
