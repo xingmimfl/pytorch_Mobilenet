@@ -13,4 +13,13 @@ stopped at 39 epoch. So I think it may get better results if the training could 
 python main.py -b 256 $Imagenetdir
 ```
 
+### Training mobilenet v3 on ImageNet
+
+```bash
+CUDA_VISIBLE_DEVICES=2,3 python main.py -b 256 $Imagenetdir
+```
+|commit version| Acc@1 | Acc@5
+------------------------------
+|d98433a | 56.852| 79.990
+
 License: MIT license (MIT)
