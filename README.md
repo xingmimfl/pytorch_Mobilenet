@@ -19,8 +19,10 @@ python main.py -b 256 $Imagenetdir
 CUDA_VISIBLE_DEVICES=2,3 python main.py -b 256 $Imagenetdir
 ```
 
-commit version| Acc@1 | Acc@5
---------------|-------|-------
-d98433a | 56.852| 79.990
+commit version| Acc@1 | Acc@5  | 
+--------------|-------|------- |------
+d98433a       | 56.852| 79.990 | SGD
+--------------|-------|--------|------
+3ae3b7f       | 66.908| 87.504 | SGD
 
 License: MIT license (MIT)
