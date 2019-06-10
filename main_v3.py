@@ -19,7 +19,7 @@ import torchvision.datasets as datasets
 import torchvision.models as models
 from mobilenet_v3 import mobileNet_L as mobileNet
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '4,5'
 
 model_names = sorted(name for name in models.__dict__
     if name.islower() and not name.startswith("__")

@@ -76,6 +76,7 @@ class Bneck(nn.Module):
         super(Bneck, self).__init__() 
         self.expand_ratio = expand_ratio
         padding_size = int((kernel_s - 1) / 2)
+        self.use_res = (stride == 1 and in_c == out_c)
 
         if NL=="RE":
             nonlinear_layer = nn.ReLU(inplace=True)
@@ -106,29 +107,31 @@ class Bneck(nn.Module):
         )
 
     def forward(self, x):
-        x = self.layers(x)
-        return x
+        if self.use_res:
+            return x + self.layers(x)
+        else:
+            return self.layers(x)
 
 class mobileNet_L(nn.Module):
     def __init__(self, n_classes=1000):
         super(mobileNet_L, self).__init__()
         self.layers = nn.Sequential(
             conv2d(in_c=3, out_c=16, kernel_s=3, stride=2, bn=True, NL='HS'), #0
-            Bneck(in_c=16, out_c=16, kernel_s=3, stride=1, exp_size=16, NL='RE', se=False), #1
-            Bneck(in_c=16, out_c=24, kernel_s=3, stride=2, exp_size=64, NL='RE', se=False), #2
-            Bneck(in_c=24, out_c=24, kernel_s=3, stride=1, exp_size=72, NL='RE', se=False), #3
-            Bneck(in_c=24, out_c=40, kernel_s=5, stride=2, exp_size=72, NL='RE', se=True), #4
-            Bneck(in_c=40, out_c=40, kernel_s=5, stride=1, exp_size=120, NL='RE', se=True), #5
-            Bneck(in_c=40, out_c=40, kernel_s=5, stride=1, exp_size=120, NL='RE', se=True), #6
-            Bneck(in_c=40, out_c=80, kernel_s=3, stride=2, exp_size=240, NL='HS', se=False), #7
-            Bneck(in_c=80, out_c=80, kernel_s=3, stride=1, exp_size=200, NL='HS', se=False), #8
-            Bneck(in_c=80, out_c=80, kernel_s=3, stride=1, exp_size=184, NL='HS', se=False), #9
-            Bneck(in_c=80, out_c=80, kernel_s=3, stride=1, exp_size=184, NL='HS', se=False), #10
-            Bneck(in_c=80, out_c=112, kernel_s=3, stride=1, exp_size=480, NL='HS', se=True), #11
-            Bneck(in_c=112, out_c=112, kernel_s=3, stride=1, exp_size=672, NL='HS', se=True), #12
-            Bneck(in_c=112, out_c=160, kernel_s=5, stride=2, exp_size=672, NL='HS', se=True), #13
-            Bneck(in_c=160, out_c=160, kernel_s=5, stride=1, exp_size=960, NL='HS', se=True), #14
-            Bneck(in_c=160, out_c=160, kernel_s=5, stride=1, exp_size=960, NL='HS', se=True), #15
+            Bneck(in_c=16, kernel_s=3, exp_size=16,  out_c=16, se=False, NL='RE', stride=1), #1
+            Bneck(in_c=16, kernel_s=3, exp_size=64,  out_c=24, se=False, NL='RE', stride=2), #2
+            Bneck(in_c=24, kernel_s=3, exp_size=72,  out_c=24, se=False, NL='RE', stride=1), #3
+            Bneck(in_c=24, kernel_s=5, exp_size=72,  out_c=40, se=True , NL='RE', stride=2), #4
+            Bneck(in_c=40, kernel_s=5, exp_size=120, out_c=40, se=True , NL='RE', stride=1), #5
+            Bneck(in_c=40, kernel_s=5, exp_size=120, out_c=40, se=True , NL='RE', stride=1), #6
+            Bneck(in_c=40, kernel_s=3, exp_size=240, out_c=80, se=False, NL='HS', stride=2), #7
+            Bneck(in_c=80, kernel_s=3, exp_size=200, out_c=80, se=False, NL='HS', stride=1), #8
+            Bneck(in_c=80, kernel_s=3, exp_size=184, out_c=80, se=False, NL='HS', stride=1), #9
+            Bneck(in_c=80, kernel_s=3, exp_size=184, out_c=80, se=False, NL='HS', stride=1), #10
+            Bneck(in_c=80, kernel_s=3, exp_size=480, out_c=112, se=True, NL='HS', stride=1), #11
+            Bneck(in_c=112, kernel_s=3, exp_size=672, out_c=112, se=True, NL='HS', stride=1), #12
+            Bneck(in_c=112, kernel_s=5, exp_size=672, out_c=160, se=True, NL='HS', stride=2), #13
+            Bneck(in_c=160, kernel_s=5, exp_size=960, out_c=160, se=True, NL='HS', stride=1), #14
+            Bneck(in_c=160, kernel_s=5, exp_size=960, out_c=160, se=True, NL='HS', stride=1), #15
             conv2d(in_c=160, out_c=960, kernel_s=1, stride=1, bn=True, NL='HS'), #16
         )        
         self.head_layers = nn.Sequential(
@@ -146,4 +149,5 @@ if __name__=="__main__":
     x = torch.rand((1, 3, 224, 224)) 
     net = mobileNet_L(1000) 
     x = net(x)
+    print('Total params: %.2fM' % (sum(p.numel() for p in net.parameters())/1000000.0))
     print(x.size()) 
